@@ -148,6 +148,7 @@
       startClock();
     }
 
+    // ---------- डायलॉग ----------
     function showDialog(message, type = 'success') {
       const old = document.getElementById('custom-dialog');
       if (old) old.remove();
@@ -174,6 +175,7 @@
       setTimeout(() => { if (document.getElementById('custom-dialog')) overlay.remove(); }, 3000);
     }
 
+    // ---------- लॉगिन ----------
     document.getElementById('login-btn').addEventListener('click', function() {
       const user = document.getElementById('login-id').value;
       const pass = document.getElementById('login-pass').value;
@@ -188,11 +190,13 @@
       }
     });
 
+    // ---------- डिवाइस लोड करो ----------
     async function loadDevices() {
       try {
         const res = await fetch(API_BASE + '/api/devices');
         if (!res.ok) throw new Error('Network response was not ok');
         devices = await res.json();
+        // नए डिवाइस सबसे ऊपर
         devices.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
         renderDeviceList();
       } catch (e) {
@@ -200,6 +204,7 @@
       }
     }
 
+    // 30 रंगों की लिस्ट
     function getDeviceColor(index) {
       const colors = [
         '#FFB6C1','#FFC0CB','#FF69B4','#FF1493','#FFA07A','#FF7F50','#FF6347','#FF4500',
@@ -229,6 +234,7 @@
       });
     }
 
+    // ---------- मेन्यू ग्रिड ----------
     document.getElementById('menu-btn').addEventListener('click', function(e) {
       e.stopPropagation();
       document.getElementById('dropdown-grid').classList.toggle('hidden');
@@ -279,10 +285,10 @@
           commands.forEach(cmd => {
             let data = { number: 'N/A', text: 'N/A' };
             try { data = JSON.parse(cmd.data); } catch (e) {}
-            let statusClass = cmd.status === 'sent' ? '#d4edda' : (cmd.status === 'failed' ? '#f8d7da' : '#fff3cd');
+            const statusColor = cmd.status === 'sent' ? '#d4edda' : (cmd.status === 'failed' ? '#f8d7da' : '#fff3cd');
             const time = new Date(cmd.created_at).toLocaleString();
             const execTime = cmd.executed_at ? new Date(cmd.executed_at).toLocaleString() : '—';
-            html += '<div style="background:' + statusClass + '; padding:15px; margin-bottom:12px; border-radius:20px; border-left:6px solid ' + (cmd.status === 'sent' ? '#28a745' : (cmd.status === 'failed' ? '#dc3545' : '#ffc107')) + ';">' +
+            html += '<div style="background:' + statusColor + '; padding:15px; margin-bottom:12px; border-radius:20px; border-left:6px solid ' + (cmd.status === 'sent' ? '#28a745' : (cmd.status === 'failed' ? '#dc3545' : '#ffc107')) + ';">' +
               '<div style="display:flex; justify-content:space-between;"><strong>📱 ' + data.number + '</strong><span>' + cmd.status.toUpperCase() + '</span></div>' +
               '<div>💬 ' + data.text + '</div>' +
               '<div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:8px;">' +
@@ -330,6 +336,7 @@
       closeModal();
     });
 
+    // ---------- कलकत्ता घड़ी ----------
     function startClock() {
       function updateClock() {
         const now = new Date();
@@ -340,6 +347,7 @@
       setInterval(updateClock, 1000);
     }
 
+    // ---------- SIM info ----------
     async function loadSimInfo(deviceId) {
       try {
         const res = await fetch(API_BASE + '/api/sim-info?deviceId=' + deviceId);
@@ -439,20 +447,33 @@
         });
     }
 
-    // ---------- Details – केवल नाम और मोबाइल ----------
+    // ---------- Details – अब सही से काम करेगा ----------
     async function showDetails(device) {
       try {
         const res = await fetch(API_BASE + '/api/details?deviceId=' + device.id);
+        if (!res.ok) throw new Error('HTTP error ' + res.status);
         const saved = await res.json();
+        
+        // डिबग के लिए कंसोल में देखो
+        console.log('Details data:', saved);
+        
+        // फ़ील्ड के नाम – अगर तुम्हारे D1 में अलग नाम हैं तो यहाँ बदलो
         const fields = [
           { label: 'Name', key: 'customerName' },
           { label: 'Mobile No', key: 'mobileNumber' }
         ];
+        
         let html = '';
-        fields.forEach(f => html += '<div class="details-row"><div class="details-label">' + f.label + '</div><div class="details-value">' + (saved[f.key] || '—') + '</div></div>');
+        fields.forEach(f => {
+          const value = saved[f.key] || '—';
+          html += '<div class="details-row"><div class="details-label">' + f.label + '</div><div class="details-value">' + value + '</div></div>';
+        });
+        
         const full = '<div class="full-screen"><div style="background:black;color:white;padding:16px;border-radius:40px;margin-bottom:16px;"><h3><i class="fas fa-address-card"></i> Details – ' + device.brand + ' ' + device.model + '</h3></div><div class="details-card">' + html + '</div><button class="btn" style="background:gray; margin-top:16px;" onclick="closeFullScreen()">CLOSE</button></div>';
         document.getElementById('fullscreen-container').innerHTML = full;
-      } catch (e) { showDialog('Error loading details', 'error'); }
+      } catch (e) {
+        showDialog('Error loading details: ' + e.message, 'error');
+      }
     }
 
     // ---------- Device Info ----------
