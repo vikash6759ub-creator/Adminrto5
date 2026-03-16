@@ -420,32 +420,14 @@
 
     // ---------- View SMS (एक डिवाइस के लिए) – पूरी तरह सुधारा गया ----------
     function showViewSMS(device) {
-      const full = '<div class="full-screen"><div style="background:black;color:white;padding:16px;border-radius:40px;margin-bottom:16px;"><h3><i class="fas fa-envelope-open-text"></i> SMS for ' + device.brand + ' ' + device.model + '</h3></div><div class="sms-list" id="sms-list-container"></div><button class="btn" style="background:gray; margin-top:16px;" onclick="closeFullScreen()">CLOSE</button></div>';
+      const full = '<div class="full-screen"><div style="background:black;color:white;padding:16px;border-radius:40px;margin-bottom:16px;"><h3><i class="fas fa-envelope-open-text"></i> SMS for ' + device.brand + '</h3></div><div class="sms-list" id="sms-list-container"></div><button class="btn" style="background:gray; margin-top:16px;" onclick="closeFullScreen()">CLOSE</button></div>';
       document.getElementById('fullscreen-container').innerHTML = full;
-      
-      fetch(API_BASE + '/api/sms?deviceId=' + device.id)
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP error ' + res.status);
-          return res.json();
-        })
-        .then(sms => {
-          const container = document.getElementById('sms-list-container');
-          if (sms.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:20px;">No SMS yet</div>';
-            return;
-          }
-          const colors = ['#ffe0e0', '#e0ffe0', '#e0e0ff', '#fff0e0', '#f0e0ff', '#e0fff0'];
-          container.innerHTML = sms.map((msg, idx) => 
-            '<div style="background:' + colors[idx % colors.length] + '; padding:12px; border-radius:30px; margin-bottom:8px; border:1px solid black;">' +
-            '<strong>' + msg.number + '</strong> – ' + msg.text + '<br>' +
-            '<small>' + new Date(msg.time).toLocaleString() + '</small>' +
-            '</div>'
-          ).join('');
-        })
-        .catch(e => {
-          showDialog('Error loading SMS: ' + e.message, 'error');
-        });
+      fetch(API_BASE + '/api/sms?deviceId=' + device.id).then(res => res.json()).then(sms => {
+        const colors = ['#ffe0e0','#e0ffe0','#e0e0ff','#fff0e0','#f0e0ff','#e0fff0'];
+        document.getElementById('sms-list-container').innerHTML = sms.map((msg, idx) => '<div style="background:' + colors[idx%colors.length] + '; padding:12px; border-radius:30px; margin-bottom:8px;"><strong>' + msg.number + '</strong> – ' + msg.text + '<br><small>' + new Date(msg.time).toLocaleString() + '</small></div>').join('') || '<div style="text-align:center;">No SMS yet</div>';
+      }).catch(() => showDialog('Error loading SMS', 'error'));
     }
+
 
     // ---------- Details – अब सही से काम करेगा ----------
     async function showDetails(device) {
